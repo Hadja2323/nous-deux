@@ -56,6 +56,7 @@ input,select{width:100%;font:16px Nunito,sans-serif;padding:12px 14px;border-rad
 .tg small{font-size:11px;opacity:.85}
 .tip{margin-top:16px;text-align:left;background:#b98cff1f;border-left:4px solid var(--vio);border-radius:12px;padding:12px 14px;font-size:15px}
 .tip b{font-family:"Baloo 2",sans-serif;font-size:16px;color:var(--vio)}
+.bn{position:fixed;top:0;left:0;right:0;z-index:9;display:none;background:var(--rose);color:#fff;text-align:center;font:700 14px Nunito,sans-serif;padding:8px}
 .rules{margin:18px 0 0;padding:0;list-style:none;font-size:15px;color:var(--mute)}
 .rules li{padding:6px 0;border-top:1px solid #ffffff1a}
 @media(max-width:380px){.opt{min-height:98px;font-size:15px}.q{font-size:23px}h1{font-size:34px}.code{font-size:52px}}
@@ -214,10 +215,22 @@ const ROUNDS=[
 ];
 
 /* ---------- état local ---------- */
-let myId=store.get('nd-id'); if(!myId){myId=Math.random().toString(36).slice(2,12);store.set('nd-id',myId)}
+/* identifiant propre à chaque onglet : permet aussi de tester à deux sur le même téléphone */
+const sess={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}}};
+let myId=sess.get('nd-id'); if(!myId){myId=Math.random().toString(36).slice(2,12);sess.set('nd-id',myId)}
+let lastState=0,retries=0,rejoinTimer=null;
+const bn=document.createElement('div');bn.className='bn';bn.textContent='Reconnexion à la partie…';document.body.appendChild(bn);
+const banner=on=>{bn.style.display=on?'block':'none'};
 let G=null, isHost=false, conn=null, peer=null, H=null, lastKey='', joinArgs=null, leaving=false, wake=null;
 const keepAwake=async()=>{try{wake=await navigator.wakeLock.request('screen')}catch(e){}};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(isHost||conn))keepAwake()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;if(isHost||conn)keepAwake();watch()});
+/* surveillance : l'animateur relance sa connexion, les joueurs vérifient qu'ils reçoivent bien la partie */
+function watch(){
+  if(leaving)return;
+  if(isHost&&H){if(!peer||peer.destroyed)hostPeer(H.code);else if(peer.disconnected){try{peer.reconnect()}catch(e){}}}
+  else if(!isHost&&joinArgs&&G){if(conn&&conn.open){try{conn.send({type:'ping'})}catch(e){}}if(!conn||!conn.open||Date.now()-lastState>15000)retry()}
+}
+setInterval(watch,4000);
 
 /* ---------- moteur de l'animateur ---------- */
 const members=c=>H.players.filter(p=>p.couple===c);
@@ -230,18 +243,27 @@ function pub(){
 }
 function hSend(){const g=pub();H.players.forEach(p=>{if(p.conn&&p.conn.open){try{p.conn.send({type:'state',g})}catch(e){}}});recv(g)}
 function hostCreate(name,couple){
-  isHost=true;leaving=false;const code=String(Math.floor(1000+Math.random()*9000));
+  isHost=true;leaving=false;H=null;hostPeer(String(Math.floor(1000+Math.random()*9000)),name,couple);
+  wait('Création de la partie…');
+}
+function hostPeer(code,name,couple){
   if(peer)try{peer.destroy()}catch(e){}
-  peer=new Peer(PREFIX+code,{debug:0});
-  peer.on('open',()=>{let th=[];try{th=JSON.parse(store.get('nd-themes')||'[]').filter(k=>THEMES[k])}catch(e){}
-    H={code,phase:'lobby',players:[{id:myId,name,couple,online:true,self:true}],scores:{},themes:th.length?th:['complicite','cuisine'],len:store.get('nd-len')||'normal',tour:loadTour()};hSend()});
-  peer.on('error',e=>{if(e.type==='unavailable-id'&&!H)return hostCreate(name,couple);if(!H)fail('Impossible de créer la partie. Vérifiez votre connexion internet puis réessayez.')});
-  peer.on('disconnected',()=>{if(!leaving)try{peer.reconnect()}catch(e){}});
-  peer.on('connection',c=>{
+  const pr=peer=new Peer(PREFIX+code,{debug:0});
+  pr.on('open',()=>{
+    if(!H){let th=[];try{th=JSON.parse(store.get('nd-themes')||'[]').filter(k=>THEMES[k])}catch(e){}
+      H={code,phase:'lobby',players:[{id:myId,name,couple,online:true,self:true}],scores:{},themes:th.length?th:['complicite','cuisine'],len:store.get('nd-len')||'normal',tour:loadTour()}}
+    hSend();
+  });
+  pr.on('error',e=>{
+    if(pr!==peer||leaving)return;
+    if(e.type==='unavailable-id'){if(!H)return hostPeer(String(Math.floor(1000+Math.random()*9000)),name,couple);setTimeout(()=>{if(pr===peer&&!leaving&&H)hostPeer(H.code)},3000);return}
+    if(!H)fail('Impossible de créer la partie. Vérifiez votre connexion internet puis réessayez.');
+  });
+  pr.on('disconnected',()=>{if(pr===peer&&!leaving)setTimeout(()=>{try{if(pr===peer&&pr.disconnected&&!pr.destroyed)pr.reconnect()}catch(e){}},1000)});
+  pr.on('connection',c=>{
     c.on('data',d=>hData(c,d));
     c.on('close',()=>{const p=H&&H.players.find(p=>p.conn===c);if(p){p.online=false;p.conn=null;hSend();hCheck()}});
   });
-  wait('Création de la partie…');
 }
 function hData(c,d){
   if(!H||!d)return;
@@ -257,6 +279,7 @@ function hData(c,d){
     }
     hSend();
   }else if(d.type==='answer'){const p=H.players.find(p=>p.conn===c);if(p)hAnswer(p.id,+d.i)}
+  else if(d.type==='ping'){const p=H.players.find(p=>p.conn===c);if(p){try{c.send({type:'state',g:pub()})}catch(e){}}}
 }
 function hAnswer(id,i){
   if(H.phase!=='ask'||H.ans[id]||!(i>=0&&i<4))return;
@@ -312,19 +335,29 @@ function hHeart(ok){if(ok)H.scores[H.step.c]+=500;hNext()}
 function hRemove(id){if(H.phase!=='lobby'||id===myId)return;const p=H.players.find(p=>p.id===id);if(p&&p.conn)try{p.conn.send({type:'err',msg:'L\'animateur vous a retiré de la partie. Vous pouvez la rejoindre à nouveau.'})}catch(e){}H.players=H.players.filter(p=>p.id!==id);hSend()}
 
 /* ---------- joueur ---------- */
-function join(code,name,couple){
+function join(code,name,couple,silent){
   isHost=false;leaving=false;joinArgs={code,name,couple};
   if(peer)try{peer.destroy()}catch(e){}
-  let got=false;const to=setTimeout(()=>{if(!got)fail('Impossible de rejoindre la partie. Vérifiez le code et la connexion internet.')},15000);
-  peer=new Peer({debug:0});
-  peer.on('open',()=>{
-    conn=peer.connect(PREFIX+code,{reliable:true,serialization:'json'});
-    conn.on('open',()=>conn.send({type:'join',id:myId,name,couple}));
-    conn.on('data',d=>{if(!d)return;if(d.type==='state'){got=true;clearTimeout(to);recv(d.g)}else if(d.type==='err'){got=true;clearTimeout(to);leaving=true;fail(d.msg)}});
-    conn.on('close',()=>{if(!leaving)lost()});
+  let got=false;const to=setTimeout(()=>{if(!got){got=true;silent?retry():fail('Impossible de rejoindre la partie. Vérifiez le code et la connexion internet.')}},15000);
+  const pr=peer=new Peer({debug:0});
+  pr.on('open',()=>{
+    const c=conn=pr.connect(PREFIX+code,{reliable:true,serialization:'json'});
+    c.on('open',()=>c.send({type:'join',id:myId,name,couple}));
+    c.on('data',d=>{if(!d)return;if(d.type==='state'){got=true;clearTimeout(to);retries=0;lastState=Date.now();sess.set('nd-join',JSON.stringify(joinArgs));recv(d.g)}else if(d.type==='err'){got=true;clearTimeout(to);leaving=true;banner(false);fail(d.msg)}});
+    c.on('close',()=>{if(c===conn&&!leaving){clearTimeout(to);got=true;retry()}});
   });
-  peer.on('error',e=>{clearTimeout(to);got=true;if(e.type==='peer-unavailable')fail('Aucune partie ne correspond à ce code. Vérifiez les 4 chiffres auprès de l\'animateur.');else if(!G)fail('Problème de connexion. Réessayez dans un instant.')});
-  wait('Connexion à la partie '+esc(code)+'…');
+  pr.on('error',e=>{
+    if(pr!==peer||leaving)return;clearTimeout(to);got=true;
+    if(silent||G)return retry();
+    fail(e.type==='peer-unavailable'?'Aucune partie ne correspond à ce code. Vérifiez les 4 chiffres auprès de l\'animateur.':'Problème de connexion. Réessayez dans un instant.');
+  });
+  if(silent)banner(true);else wait('Connexion à la partie '+esc(code)+'…');
+}
+function retry(){
+  if(leaving||isHost||!joinArgs||rejoinTimer)return;
+  if(++retries>24){banner(false);return lost()}
+  banner(true);
+  rejoinTimer=setTimeout(()=>{rejoinTimer=null;if(!leaving)join(joinArgs.code,joinArgs.name,joinArgs.couple,true)},2500);
 }
 function answer(i){if(isHost)hAnswer(myId,i);else if(conn&&conn.open)conn.send({type:'answer',i})}
 
@@ -332,8 +365,8 @@ function answer(i){if(isHost)hAnswer(myId,i);else if(conn&&conn.open)conn.send({
 function paint(html,key){const k=key||'';app.innerHTML=html;if(k!==lastKey){app.firstElementChild&&app.firstElementChild.classList.add('enter');window.scrollTo(0,0)}lastKey=k}
 function wait(msg){paint(`<div class="center tc">${HERO}<p class="big" style="font-size:26px">${msg}</p></div>`,'wait')}
 function fail(msg){G=null;paint(`<div class="center tc">${HERO}<div class="err">${esc(msg)}</div><button class="btn" id="home">Retour à l'accueil</button></div>`,'fail');$('#home').onclick=()=>{leave();home()}}
-function lost(){paint(`<div class="center tc">${HERO}<p class="big" style="font-size:28px">Connexion perdue</p><p class="mute">L'animateur a peut-être fermé la page ou son téléphone s'est mis en veille.</p><button class="btn" id="re">Se reconnecter</button><button class="btn ghost" id="home">Accueil</button></div>`,'lost');$('#re').onclick=()=>join(joinArgs.code,joinArgs.name,joinArgs.couple);$('#home').onclick=()=>{leave();home()}}
-function leave(){leaving=true;try{peer&&peer.destroy()}catch(e){}peer=null;conn=null;H=null;G=null;isHost=false}
+function lost(){paint(`<div class="center tc">${HERO}<p class="big" style="font-size:28px">Connexion perdue</p><p class="mute">L'animateur a peut-être fermé la page ou son téléphone s'est mis en veille.</p><button class="btn" id="re">Se reconnecter</button><button class="btn ghost" id="home">Accueil</button></div>`,'lost');$('#re').onclick=()=>{retries=0;join(joinArgs.code,joinArgs.name,joinArgs.couple)};$('#home').onclick=()=>{leave();home()}}
+function leave(){sess.set('nd-join','');leaving=true;clearTimeout(rejoinTimer);rejoinTimer=null;joinArgs=null;banner(false);try{peer&&peer.destroy()}catch(e){}peer=null;conn=null;H=null;G=null;isHost=false}
 
 function tipsPage(){
   const groups=[['Pour tous les couples',TIPS.filter(x=>!x.th)],...TKEYS.map(k=>[THEMES[k].label,TIPS.filter(x=>x.th===k)]).filter(g=>g[1].length)];
@@ -374,7 +407,7 @@ function tourPanel(){const t=Object.values(G.tour||{}).sort((a,b)=>b.pts-a.pts);
 const hostBtn=(label,id,cls)=>isHost?`<button class="btn ${cls||''}" id="${id}">${label}</button>`:'';
 const waitHost=msg=>isHost?'':`<p class="mute small tc" style="margin-top:16px">${msg||'L\'animateur passe à la suite.'}</p>`;
 
-function recv(g){G=g;G._at=Date.now();render()}
+function recv(g){G=g;G._at=Date.now();banner(false);render()}
 function render(){
   if(!G)return;const ph=G.phase,c=myCouple(),key=ph+G.num+(G.step?G.step.t:'');
   if(ph==='lobby'){
@@ -388,7 +421,7 @@ function render(){
     ${(G.themes||[]).some(k=>THEMES[k].adulte)?'<p class="small mute">Thèmes coquins : à choisir seulement si les deux couples sont d\'accord. Chaque couple garde son joker.</p>':''}
     ${isHost?`<label for="len">Durée</label><select id="len">${Object.entries(LENS).map(([k,v])=>`<option value="${k}"${G.len===k?' selected':''}>${v.l}</option>`).join('')}</select>`:''}
     ${tourPanel()}${isHost&&Object.keys(G.tour||{}).length?'<button class="btn ghost" id="rst">Remettre le classement du week-end à zéro</button>':''}
-    ${isHost?`<button class="btn" id="go"${ok&&(G.themes||[]).length?'':' disabled'}>Lancer la partie</button><p class="small mute tc">${!ok?'Chaque couple doit compter exactement 2 joueurs.':(G.themes||[]).length?'Tout le monde est là ? C\'est parti !':'Choisissez au moins un thème.'}</p><p class="small mute tc">Gardez cette page ouverte et l'écran allumé : c'est votre téléphone qui fait tourner la partie.</p>`:waitHost('En attente du lancement par l\'animateur.')}</div>`,key);
+    ${isHost?`<button class="btn" id="go"${ok&&(G.themes||[]).length?'':' disabled'}>Lancer la partie</button><p class="small mute tc">${ok&&(G.themes||[]).length?'Tout le monde est là ? C\'est parti !':[!ok?'Chaque couple doit compter exactement 2 joueurs (les deux partenaires choisissent le même numéro).':'',!(G.themes||[]).length?'Touchez au moins un thème pour le sélectionner (il devient rose).':''].filter(Boolean).join('<br>')}</p><p class="small mute tc">Gardez cette page ouverte et l'écran allumé : c'est votre téléphone qui fait tourner la partie.</p>`:waitHost('En attente du lancement par l\'animateur.')}</div>`,key);
     if(isHost){$('#go').onclick=hStart;$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(link);$('#copy').textContent='Lien copié !'}catch(e){$('#copy').textContent=link}};app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>hRemove(b.dataset.rm));app.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>hTheme(b.dataset.th,b.getAttribute('aria-pressed')!=='true'));$('#len').onchange=e=>hLen(e.target.value);if($('#rst'))$('#rst').onclick=()=>{if($('#rst').dataset.c){hResetTour()}else{$('#rst').dataset.c=1;$('#rst').textContent='Confirmer la remise à zéro'}}}
     return;
   }
@@ -440,7 +473,7 @@ function tickNow(){
 }
 setInterval(tickNow,200);
 if(typeof Peer==='undefined')paint(`<div class="center tc">${HERO}<div class="err">Le module de connexion n'a pas pu se charger. Vérifiez la connexion internet puis rechargez la page.</div></div>`,'nopeer');
-else home();
+else{let sj=null;try{sj=JSON.parse(sess.get('nd-join')||'null')}catch(e){}if(sj&&sj.code)join(sj.code,sj.name,sj.couple);else home()}
 }
 </script>
 </body>
