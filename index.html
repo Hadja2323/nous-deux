@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nous deux, le quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#2a0f24;--bg2:#3d1734;--ink:#fff4f8;--mute:#e7bcd2;--rose:#ff5d8f;--vio:#b98cff;--c0:#e4572e;--c1:#2f6fde;--c2:#c98f00;--c3:#1f9e74}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;min-height:100vh;background:radial-gradient(120% 70% at 50% 0%,#5a1f4b 0%,var(--bg) 62%);background-color:var(--bg);color:var(--ink);font:17px/1.5 Nunito,system-ui,sans-serif;overflow-x:clip}
+#app{max-width:560px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column}
+h1,.big{font-family:"Baloo 2",system-ui,sans-serif;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:42px}
+.mute{color:var(--mute)}.small{font-size:14px}.tc{text-align:center}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px;color:var(--mute);margin-bottom:14px}
+.q{font-family:"Baloo 2",sans-serif;font-size:27px;line-height:1.15;text-align:center;margin:10px 0 18px;text-wrap:balance}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:auto}
+.opt{min-height:112px;border:0;border-radius:16px;color:#fff;font:800 17px/1.2 Nunito,sans-serif;padding:14px 12px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:10px;text-align:left;cursor:pointer;box-shadow:0 5px 0 #0005;transition:transform .1s}
+.opt:active{transform:translateY(3px);box-shadow:0 2px 0 #0005}
+.opt svg{width:24px;height:24px;flex:none}
+.o0{background:var(--c0)}.o1{background:var(--c1)}.o2{background:var(--c2)}.o3{background:var(--c3)}.on{background:#ffffff22}
+.btn{display:block;width:100%;min-height:54px;border:0;border-radius:14px;background:var(--rose);color:#fff;font:800 19px "Baloo 2",sans-serif;cursor:pointer;margin-top:14px;box-shadow:0 5px 0 #a3264f}
+.btn.ghost{background:transparent;border:2px solid #ffffff55;box-shadow:none;color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #fff;outline-offset:3px}
+label{display:block;font-size:14px;color:var(--mute);margin:12px 0 4px}
+input,select{width:100%;font:16px Nunito,sans-serif;padding:12px 14px;border-radius:12px;border:2px solid #6b2d5c;background:#1d0a19;color:var(--ink)}
+.code{font:800 64px/1 "Baloo 2",sans-serif;letter-spacing:.08em;text-align:center;color:#fff}
+.timer{height:10px;background:#0005;border-radius:6px;overflow:hidden;margin:4px 0}
+.timer i{display:block;height:100%;background:var(--rose);width:100%}
+.count{text-align:center;font:800 40px/1.1 "Baloo 2",sans-serif}
+.center{margin:auto 0;padding:16px 0}
+.panel{margin-top:18px;background:#ffffff0d;border-radius:16px;padding:6px 14px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;margin:10px 0;align-items:baseline}
+.bar{grid-column:1/-1;height:12px;background:#0005;border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:8px;transition:width .8s}
+.pts{font:800 22px "Baloo 2",sans-serif;white-space:nowrap}
+.verdict{font:800 36px/1.05 "Baloo 2",sans-serif;text-align:center}
+.good{color:#6be3b0}.bad{color:#ff9a9a}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.two .opt{min-height:92px;pointer-events:none}
+.two small{font-weight:700;opacity:.85}
+.hero{display:block;margin:8px auto 10px;width:160px;height:124px}
+.tag{display:inline-block;background:#ffffff1f;border-radius:99px;padding:4px 12px;font-size:14px}
+.cpl{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #ffffff1a}
+.cpl:first-child{border-top:0}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#ffffff1a;border-radius:99px;padding:3px 4px 3px 12px;margin:2px}
+.chip button{border:0;background:#ffffff26;color:#fff;border-radius:99px;width:28px;height:28px;cursor:pointer}
+.off{opacity:.45}
+.err{background:#ff5d5d22;border:1px solid #ff8a8a;border-radius:12px;padding:10px 12px;margin-top:12px}
+.themes{display:flex;flex-wrap:wrap;gap:8px}
+.tg{border:2px solid #ffffff40;background:transparent;color:var(--ink);border-radius:99px;padding:8px 14px;min-height:44px;font:700 15px Nunito,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.tg[aria-pressed=true]{background:var(--rose);border-color:var(--rose)}
+.tg small{font-size:11px;opacity:.85}
+.tip{margin-top:16px;text-align:left;background:#b98cff1f;border-left:4px solid var(--vio);border-radius:12px;padding:12px 14px;font-size:15px}
+.tip b{font-family:"Baloo 2",sans-serif;font-size:16px;color:var(--vio)}
+.rules{margin:18px 0 0;padding:0;list-style:none;font-size:15px;color:var(--mute)}
+.rules li{padding:6px 0;border-top:1px solid #ffffff1a}
+@media(max-width:380px){.opt{min-height:98px;font-size:15px}.q{font-size:23px}h1{font-size:34px}.code{font-size:52px}}
+@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+.enter{animation:pop .25s ease-out}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+{
+const PREFIX='nousdeux-quiz-myt-', T=25, CHRONO=30;
+const $=s=>document.querySelector(s), app=$('#app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const range=n=>[...Array(n).keys()];
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const SH=['<svg viewBox="0 0 24 24"><path d="M12 3 22 21H2z" fill="#fff"/></svg>','<svg viewBox="0 0 24 24"><path d="M12 2 22 12 12 22 2 12z" fill="#fff"/></svg>','<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff"/></svg>','<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="#fff"/></svg>'];
+const HP='M50 88C20 66 4 48 4 30 4 16 15 6 28 6c10 0 18 6 22 14C54 12 62 6 72 6c13 0 24 10 24 24 0 18-16 36-46 58Z';
+const HERO=`<svg class="hero" viewBox="0 0 160 124" aria-hidden="true"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8db0"/><stop offset="1" stop-color="#e0336c"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4b5ff"/><stop offset="1" stop-color="#8a5ae0"/></linearGradient></defs><ellipse cx="80" cy="116" rx="62" ry="6" fill="#0005"/><path d="${HP}" transform="translate(6 12) scale(.9)" fill="url(#g1)"/><path d="${HP}" transform="translate(62 18) scale(.86)" fill="url(#g2)" opacity=".92"/></svg>`;
+
+/* Chaque thème : know (l'un répond sur lui, l'autre devine), wave (les deux répondent sur le couple), defis (gages). */
+const THEMES={
+complicite:{label:'Complicité',know:[
+{me:'Pour me détendre, je préfère…',them:'Pour se détendre, {n} préfère…',o:['Dormir ou me reposer','Sortir voir du monde','Une série ou mon téléphone','Le calme, la nature']},
+{me:'Mon moment préféré de la journée',them:'Le moment préféré de la journée de {n}',o:['Le matin','Le midi','La fin d\'après-midi','La soirée']},
+{me:'Le cadeau qui me touche le plus',them:'Le cadeau qui touche le plus {n}',o:['Un objet pensé pour moi','Un moment passé ensemble','Un mot écrit','Un service rendu']},
+{me:'Quand je suis contrarié(e), j\'ai surtout besoin…',them:'Quand {n} est contrarié(e), il ou elle a surtout besoin…',o:['D\'en parler tout de suite','D\'être seul(e) un moment','D\'un câlin','De penser à autre chose']},
+{me:'La destination de mes rêves',them:'La destination de rêve de {n}',o:['Une plage paradisiaque','Une grande ville','La montagne','Un voyage culturel ou religieux']},
+{me:'Ce qui m\'agace le plus au quotidien',them:'Ce qui agace le plus {n} au quotidien',o:['Le retard','Le désordre','Le bruit','Qu\'on ne m\'écoute pas']},
+{me:'Dans une fête, je suis plutôt…',them:'Dans une fête, {n} est plutôt…',o:['Celui ou celle qui cuisine','Celui ou celle qui danse','Celui ou celle qui discute','Celui ou celle qui organise']},
+{me:'Avec une journée libre, je ferais…',them:'Avec une journée libre, {n} ferait…',o:['Une grasse matinée','Une sortie en famille','Du sport ou une activité','Rien de prévu, au feeling']},
+{me:'Ce qui me fait le plus sentir aimé(e)',them:'Ce qui fait le plus sentir aimé(e) {n}',o:['Les mots doux','Les petites attentions','Le temps passé ensemble','Les câlins']},
+{me:'Ma plus grande qualité, selon moi',them:'La plus grande qualité de {n}, selon lui ou elle',o:['Ma patience','Ma générosité','Mon humour','Ma fiabilité']},
+{me:'Ce qui me rend le plus fier ou fière',them:'Ce qui rend {n} le plus fier ou fière',o:['Ma famille','Mon travail','Mes amitiés','Mon parcours']},
+{me:'Mon rêve pour dans 10 ans',them:'Le rêve de {n} pour dans 10 ans',o:['Une belle maison','Voyager','Une famille épanouie','Réussir professionnellement']},
+{me:'Ce que j\'ai remarqué en premier chez toi',them:'Ce que {n} a remarqué en premier chez toi',o:['Le sourire','Le regard','La voix','L\'attitude']},
+{me:'Si je gagnais 10 000 €, je…',them:'Si {n} gagnait 10 000 €, il ou elle…',o:['Épargnerais tout','Partirais en voyage','Investirais dans la maison','Ferais plaisir aux autres']}
+],wave:[
+{q:'Qui de nous deux s\'excuse en premier après une dispute ?',o:['{a}','{b}','Ça dépend','Personne !']},
+{q:'Qui de nous deux est le plus souvent en retard ?',o:['{a}','{b}','Pareil','Aucun de nous deux']},
+{q:'Notre activité préférée à deux',o:['Sortir manger','Rester à la maison','Se promener','Voir la famille ou les amis']},
+{q:'Notre prochain projet à deux devrait être…',o:['Un voyage','La maison','Économiser','Passer plus de temps ensemble']},
+{q:'Qui a dit « je t\'aime » en premier ?',o:['{a}','{b}','En même temps','On ne s\'en souvient plus']},
+{q:'Notre plus grande force en tant que couple',o:['La complicité','La confiance','L\'humour','La patience']},
+{q:'Qui de nous deux est le plus romantique ?',o:['{a}','{b}','Les deux','Aucun, on est discrets']},
+{q:'Le plus beau moment de notre histoire jusqu\'ici',o:['Notre rencontre','Notre mariage ou nos fiançailles','Un voyage','Un moment simple du quotidien']}
+],defis:[
+{q:'Dites chacun une chose que l\'autre fait et qui vous touche, mais que vous ne lui avez jamais dite.'},
+{q:'Racontez votre première rencontre, chacun avec sa version.'},
+{q:'Regardez-vous dans les yeux pendant 30 secondes, sans parler ni rire.',s:30},
+{q:'Citez chacun trois qualités de l\'autre, sans hésiter.',s:60},
+{q:'Dites chacun un petit geste que vous aimeriez recevoir plus souvent.'},
+{q:'Choisissez ensemble une sortie à faire dans le mois, et fixez une date maintenant.'},
+{q:'Complétez chacun la phrase : « Je suis fier / fière de nous parce que… »'}
+]},
+cuisine:{label:'Cuisine',know:[
+{me:'Le plat que je préfère que tu me cuisines',them:'Le plat que {n} préfère que tu lui cuisines',o:['Le pilao','Le mataba','Le poisson grillé','Les brochettes']},
+{me:'En cuisine, je suis plutôt…',them:'En cuisine, {n} est plutôt…',o:['Chef étoilé','Commis motivé','Goûteur officiel','Préposé(e) à la vaisselle']},
+{me:'Ma saveur préférée',them:'La saveur préférée de {n}',o:['Le piment','La vanille','Le coco','Le citron']},
+{me:'Mon petit-déjeuner idéal',them:'Le petit-déjeuner idéal de {n}',o:['Mkatra foutra et thé','Croissants et café','Fruits frais','Juste un café']},
+{me:'Mon dessert préféré',them:'Le dessert préféré de {n}',o:['Une glace','Un gâteau','Des fruits','Pas de dessert pour moi']}
+],wave:[
+{q:'Qui de nous deux cuisine le mieux ?',o:['{a}','{b}','Égalité','On commande !']},
+{q:'Notre resto idéal en amoureux',o:['Grillades en bord de mer','Un restaurant gastronomique','La cuisine de chez nous','Un plateau-repas à la maison']},
+{q:'Qui de nous deux grignote le plus ?',o:['{a}','{b}','Les deux','Aucun']}
+],defis:[
+{q:'Donnez à manger à votre partenaire les yeux bandés : il ou elle doit deviner 3 aliments.',s:180},
+{q:'Inventez le nom et la recette d\'un plat qui ressemble à votre couple.',s:120},
+{q:'Préparez ensemble une boisson ou un en-cas pour l\'autre couple.',s:600},
+{q:'L\'un de vous deux prépare en secret le petit-déjeuner de l\'autre.',prive:'d\'ici demain matin'}
+]},
+coquin:{label:'Coquin',adulte:1,know:[
+{me:'Le moment où je me sens le plus câlin(e)',them:'Le moment où {n} se sent le plus câlin(e)',o:['Au réveil','Pendant la sieste','Le soir','En pleine nuit']},
+{me:'Ce que je préfère chez toi physiquement',them:'Ce que {n} préfère chez toi physiquement',o:['Tes yeux','Ton sourire','Tes mains','Ta silhouette']},
+{me:'Ce qui me met le plus dans l\'ambiance',them:'Ce qui met le plus {n} dans l\'ambiance',o:['Un parfum','Un massage','Des mots doux','Une jolie tenue']},
+{me:'Ma tenue préférée sur toi',them:'La tenue préférée de {n} sur toi',o:['Une tenue traditionnelle','Une tenue de soirée','Une tenue décontractée','Le moins de tissu possible']},
+{me:'Le geste qui me fait craquer',them:'Le geste qui fait craquer {n}',o:['Un baiser dans le cou','Une caresse dans les cheveux','Un regard appuyé','Un massage des pieds']},
+{me:'Pour un moment à deux, je préfère…',them:'Pour un moment à deux, {n} préfère…',o:['Que tu prennes l\'initiative','Prendre l\'initiative','La surprise totale','Que ce soit préparé']},
+{me:'La musique idéale pour une soirée à deux',them:'La musique idéale de {n} pour une soirée à deux',o:['Douce et romantique','Musique de chez nous','R&B','Le silence']}
+],wave:[
+{q:'Qui de nous deux fait le premier pas le plus souvent ?',o:['{a}','{b}','Autant l\'un que l\'autre','Ça dépend des jours']},
+{q:'Notre moment à deux idéal dure…',o:['Une heure volée','Une soirée','Toute une nuit','Un week-end entier']},
+{q:'Qui de nous deux est le plus câlin ?',o:['{a}','{b}','Les deux','Ça dépend de l\'humeur']},
+{q:'Qui de nous deux est le plus jaloux ?',o:['{a}','{b}','Les deux','Aucun']},
+{q:'Notre escapade romantique idéale',o:['Un hôtel à Mayotte','Une île voisine','Un grand voyage','La maison, rien que nous deux']}
+],defis:[
+{q:'Un baiser de 10 secondes, devant tout le monde.',s:10},
+{q:'Dansez collés sur une chanson choisie par les autres.',s:180},
+{q:'Chuchotez à l\'oreille de votre partenaire ce que vous aimeriez faire ce soir. Personne d\'autre ne doit entendre.',s:30},
+{q:'Massage de 10 minutes pour l\'un, puis on échange les rôles.',prive:'ce soir'},
+{q:'L\'un choisit la tenue que l\'autre portera pour un moment à deux.',prive:'ce soir'},
+{q:'Envoyez-vous chacun un message coquin, au moment où l\'autre s\'y attend le moins.',prive:'dans les prochaines 24 heures'},
+{q:'Organisez un rendez-vous surprise : l\'un choisit le lieu et l\'heure, l\'autre découvre.',prive:'d\'ici demain soir'}
+]},
+fantasmes:{label:'Fantasmes',adulte:1,know:[
+{me:'Un lieu de rêve pour une nuit à deux',them:'Le lieu de rêve de {n} pour une nuit à deux',o:['Un hôtel de luxe','Un bungalow sur la plage','Sous les étoiles','Une ville inconnue']},
+{me:'Le rôle que j\'aimerais te voir jouer un soir',them:'Le rôle que {n} aimerait te voir jouer un soir',o:['Un(e) inconnu(e) séduisant(e)','Un masseur ou une masseuse','Un chef qui cuisine pour moi','Une star de cinéma']},
+{me:'Ce que j\'aimerais essayer à deux',them:'Ce que {n} aimerait essayer à deux',o:['Un massage aux huiles','Un bain à deux','Un rendez-vous déguisé','Un dîner aux chandelles']},
+{me:'Ma tenue fantasme pour toi',them:'La tenue fantasme de {n} pour toi',o:['Une tenue sexy','Costume ou robe élégante','Une tenue traditionnelle','Un uniforme']}
+],wave:[
+{q:'Notre fantasme commun serait plutôt…',o:['Un voyage romantique','Une soirée jeu de rôle','Une nuit à l\'hôtel','Une surprise totale']},
+{q:'Qui de nous deux a le plus d\'imagination ?',o:['{a}','{b}','Les deux','On doit s\'entraîner']},
+{q:'Qui de nous deux ose le plus ?',o:['{a}','{b}','Pareil','Personne, on est sages']}
+],defis:[
+{q:'Écrivez chacun un fantasme doux sur un papier, plié. Vous les échangerez en privé.',prive:'ce soir'},
+{q:'Choisissez ensemble un fantasme réalisable et fixez-lui une date.',prive:'avant la fin du week-end'},
+{q:'Décrivez à votre partenaire, à voix basse, la soirée parfaite que vous lui prépareriez.',s:60}
+]},
+roles:{label:'Jeux de rôle',know:[],wave:[],defis:[
+{q:'Rejouez votre première rencontre, en inversant les rôles.',s:120},
+{q:'Au marché, un vendeur tente de séduire une cliente très difficile. Improvisez !',s:120},
+{q:'Faites une demande en mariage façon film romantique, genou à terre.',s:90},
+{q:'Jouez une dispute où vous n\'avez le droit de dire que des compliments.',s:90},
+{q:'L\'un est serveur dans un hôtel de luxe, l\'autre un client très exigeant.',s:120},
+{q:'Présentez votre couple comme une publicité à la télé.',s:60}
+]}
+};
+const TKEYS=Object.keys(THEMES);
+/* Conseils de couple : th = thème lié (sinon conseil général) */
+const TIPS=[
+{t:'Les petits gestes du quotidien comptent souvent plus que les grandes surprises : un mot gentil, un café apporté, un merci.'},
+{t:'Pendant un désaccord, parlez de ce que vous ressentez (« je me sens… ») plutôt que d\'accuser (« tu fais toujours… »).'},
+{t:'Écouter, c\'est laisser l\'autre finir sa phrase, puis reformuler ce qu\'on a compris avant de répondre.'},
+{t:'Gardez un moment rien qu\'à deux chaque semaine, même court, même à la maison, téléphones posés.'},
+{t:'Dites merci pour les choses ordinaires : cuisiner, travailler, s\'occuper des enfants. Rien ne va de soi.'},
+{t:'Évitez de régler un conflit quand vous êtes fatigués ou affamés : convenez d\'un moment calme pour en reparler.'},
+{t:'Avec des enfants, le couple a aussi besoin de son temps : organisez-vous pour vous retrouver à deux régulièrement.'},
+{t:'Parlez de vos rêves et de vos projets : connaître ceux de l\'autre permet de les soutenir.'},
+{t:'L\'humour désamorce bien des tensions, à condition de rire ensemble, jamais aux dépens de l\'autre.'},
+{t:'Une critique passe mieux quand elle porte sur un fait précis, pas sur la personne.'},
+{t:'Demandez « de quoi as-tu besoin ? » plutôt que d\'essayer de deviner.'},
+{t:'Faites des compliments sincères devant les autres : cela nourrit la fierté et la confiance du couple.'},
+{t:'Des excuses sincères réparent : reconnaître, regretter, proposer de faire autrement.'},
+{t:'Se surprendre ne coûte pas cher : un petit mot caché, un message tendre au milieu de la journée.'},
+{t:'Les désaccords du couple se règlent à deux, pas devant la famille ou les amis.'},
+{t:'Faire des choses nouvelles ensemble rapproche : un plat, une balade, une activité jamais essayée.'},
+{t:'Un long câlin en rentrant le soir aide à se retrouver après la journée.'},
+{t:'Si un même sujet revient sans cesse, un conseiller conjugal peut aider : ce n\'est pas un échec, c\'est un soin.'},
+{t:'Cuisiner ensemble, c\'est se coordonner, rire et partager : un vrai exercice de couple.',th:'cuisine'},
+{t:'Un repas préparé pour l\'autre est une déclaration silencieuse : soignez la table autant que l\'assiette.',th:'cuisine'},
+{t:'Le désir se nourrit de nouveauté : changez de cadre, de tenue ou de rituel de temps en temps.',th:'coquin'},
+{t:'Parler de ses envies intimes est plus facile en dehors de la chambre, à un moment détendu.',th:'coquin'},
+{t:'Le respect du rythme et des limites de chacun rend l\'intimité plus libre et plus complice.',th:'coquin'},
+{t:'Partager un fantasme demande de la confiance : accueillez celui de l\'autre sans juger, même si vous ne le partagez pas.',th:'fantasmes'},
+{t:'Un fantasme n\'est pas une obligation : on peut en parler, en rire, en garder une partie ou le laisser rêvé.',th:'fantasmes'},
+{t:'Jouer un rôle permet de dire autrement ce qu\'on n\'ose pas dire : profitez-en pour vous découvrir.',th:'roles'}
+];
+const LENS={court:{l:'Courte (≈15 min)',k:4,w:3,d:1},normal:{l:'Normale (≈25 min)',k:6,w:5,d:2},long:{l:'Longue (≈40 min)',k:9,w:7,d:3}};
+const ROUNDS=[
+{n:'Qui me connaît le mieux ?',d:'Dans chaque couple, l\'un répond sur lui-même pendant que l\'autre devine, chacun sur son téléphone. Bonne réponse : jusqu\'à 1000 points, plus on devine vite, plus on gagne.'},
+{n:'Sur la même longueur d\'onde',d:'Les deux partenaires répondent chacun de leur côté à une question sur leur couple. Même réponse : 1000 points.'},
+{n:'Défis et gages',d:'Chaque couple, à tour de rôle, reçoit un défi. Certains se font tout de suite avec un chrono, d\'autres en privé, plus tard. Défi accepté : 500 points. Chaque couple peut jouer son joker et passer, sans pénalité.'}
+];
+
+/* ---------- état local ---------- */
+let myId=store.get('nd-id'); if(!myId){myId=Math.random().toString(36).slice(2,12);store.set('nd-id',myId)}
+let G=null, isHost=false, conn=null, peer=null, H=null, lastKey='', joinArgs=null, leaving=false, wake=null;
+const keepAwake=async()=>{try{wake=await navigator.wakeLock.request('screen')}catch(e){}};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(isHost||conn))keepAwake()});
+
+/* ---------- moteur de l'animateur ---------- */
+const members=c=>H.players.filter(p=>p.couple===c);
+const couplesOf=ps=>[...new Set(ps.map(p=>p.couple))].sort((a,b)=>a-b);
+function pub(){
+  const games=(H.plan||[]).filter(s=>s.t!=='intro');
+  return {code:H.code,phase:H.phase,players:H.players.map(p=>({id:p.id,name:p.name,couple:p.couple,online:p.online})),scores:H.scores,step:H.step||null,
+    num:H.plan?H.plan.slice(0,H.si+1).filter(s=>s.t!=='intro').length:0,total:games.length,
+    left:H.deadline?Math.max(0,(H.deadline-Date.now())/1000):0,span:H.span||T,answered:Object.keys(H.ans||{}),results:H.results||{},endTip:H.endTip||'',host:myId,themes:H.themes,len:H.len,tour:H.tour};
+}
+function hSend(){const g=pub();H.players.forEach(p=>{if(p.conn&&p.conn.open){try{p.conn.send({type:'state',g})}catch(e){}}});recv(g)}
+function hostCreate(name,couple){
+  isHost=true;leaving=false;const code=String(Math.floor(1000+Math.random()*9000));
+  if(peer)try{peer.destroy()}catch(e){}
+  peer=new Peer(PREFIX+code,{debug:0});
+  peer.on('open',()=>{let th=[];try{th=JSON.parse(store.get('nd-themes')||'[]').filter(k=>THEMES[k])}catch(e){}
+    H={code,phase:'lobby',players:[{id:myId,name,couple,online:true,self:true}],scores:{},themes:th.length?th:['complicite','cuisine'],len:store.get('nd-len')||'normal',tour:loadTour()};hSend()});
+  peer.on('error',e=>{if(e.type==='unavailable-id'&&!H)return hostCreate(name,couple);if(!H)fail('Impossible de créer la partie. Vérifiez votre connexion internet puis réessayez.')});
+  peer.on('disconnected',()=>{if(!leaving)try{peer.reconnect()}catch(e){}});
+  peer.on('connection',c=>{
+    c.on('data',d=>hData(c,d));
+    c.on('close',()=>{const p=H&&H.players.find(p=>p.conn===c);if(p){p.online=false;p.conn=null;hSend();hCheck()}});
+  });
+  wait('Création de la partie…');
+}
+function hData(c,d){
+  if(!H||!d)return;
+  if(d.type==='join'){
+    const id=String(d.id||'').slice(0,40),name=String(d.name||'').trim().slice(0,16)||'Joueur',cp=+d.couple;
+    let p=H.players.find(p=>p.id===id);
+    if(p){p.conn=c;p.online=true}
+    else{
+      if(H.phase!=='lobby')return c.send({type:'err',msg:'La partie a déjà commencé. Demandez à l\'animateur de relancer une partie.'});
+      if(!(cp>=1&&cp<=4))return;
+      if(members(cp).length>=2)return c.send({type:'err',msg:'Le couple '+cp+' est déjà complet. Choisissez un autre numéro de couple.'});
+      H.players.push({id,name,couple:cp,conn:c,online:true});
+    }
+    hSend();
+  }else if(d.type==='answer'){const p=H.players.find(p=>p.conn===c);if(p)hAnswer(p.id,+d.i)}
+}
+function hAnswer(id,i){
+  if(H.phase!=='ask'||H.ans[id]||!(i>=0&&i<4))return;
+  H.ans[id]={i,ms:Date.now()-H.qStart};hSend();hCheck();
+}
+function hCheck(){if(H&&H.phase==='ask'&&H.players.every(p=>H.ans[p.id]||!p.online))hReveal()}
+function hValid(){const cs=couplesOf(H.players);return cs.length>=1&&cs.every(c=>members(c).length===2)}
+function hStart(){
+  const cs=couplesOf(H.players);H.scores={};cs.forEach(c=>H.scores[c]=0);H.saved=false;
+  const sel=H.themes.length?H.themes:['complicite'],L=LENS[H.len]||LENS.normal;
+  const pool=f=>shuffle(sel.flatMap(k=>THEMES[k][f].map(q=>Object.assign({},q,{th:THEMES[k].label}))));
+  const k=pool('know').slice(0,L.k),w=pool('wave').slice(0,L.w),d=pool('defis').slice(0,L.d*cs.length);
+  const rounds=[];if(k.length)rounds.push(0);if(w.length)rounds.push(1);if(d.length)rounds.push(2);
+  const R=rounds.length;H.plan=[];
+  rounds.forEach((r,ri)=>{
+    H.plan.push({t:'intro',r,ri,R});
+    if(r===0)k.forEach((q,j)=>H.plan.push({t:'know',r,ri,R,q,targets:Object.fromEntries(cs.map(c=>[c,members(c)[j%2].id]))}));
+    if(r===1)w.forEach(q=>H.plan.push({t:'wave',r,ri,R,q}));
+    if(r===2)d.forEach((q,j)=>H.plan.push({t:'heart',r,ri,R,q,c:cs[j%cs.length]}));
+  });
+  const tp=shuffle(TIPS.filter(x=>!x.th||sel.includes(x.th)).map(x=>x.t));let ti=0;
+  H.plan.forEach(st=>{st.tip=tp[ti++%tp.length]});H.endTip=tp[ti%tp.length];
+  H.si=-1;hNext();
+}
+function loadTour(){try{return JSON.parse(store.get('nd-tournoi')||'{}')||{}}catch(e){return {}}}
+function saveTour(){couplesOf(H.players).forEach(c=>{const ms=members(c),key=ms.map(p=>p.name.toLowerCase()).sort().join('|');const t=H.tour[key]||(H.tour[key]={label:ms.map(p=>p.name).join(' & '),pts:0,games:0});t.pts+=H.scores[c]||0;t.games++});store.set('nd-tournoi',JSON.stringify(H.tour))}
+function hTheme(k,on){H.themes=H.themes.filter(x=>x!==k);if(on)H.themes.push(k);H.themes.sort((a,b)=>TKEYS.indexOf(a)-TKEYS.indexOf(b));store.set('nd-themes',JSON.stringify(H.themes));hSend()}
+function hLen(v){if(LENS[v]){H.len=v;store.set('nd-len',v);hSend()}}
+function hLobby(){clearTimeout(H.timer);H.phase='lobby';H.step=null;H.plan=null;H.si=0;H.deadline=0;hSend()}
+function hResetTour(){H.tour={};store.set('nd-tournoi','{}');hSend()}
+function hNext(){
+  clearTimeout(H.timer);H.deadline=0;H.si++;H.ans={};H.results={};
+  const st=H.plan[H.si];H.step=st||null;
+  if(!st){H.phase='end';if(!H.saved){saveTour();H.saved=true}}
+  else if(st.t==='intro')H.phase='intro';
+  else if(st.t==='heart')H.phase='heart';
+  else{H.phase='ask';H.span=T;H.qStart=Date.now();H.deadline=H.qStart+T*1000;H.timer=setTimeout(hReveal,T*1000+400)}
+  hSend();
+}
+function hReveal(){
+  if(H.phase!=='ask')return;clearTimeout(H.timer);H.deadline=0;const st=H.step;
+  couplesOf(H.players).forEach(c=>{
+    const [A,B]=members(c);let ids;
+    if(st.t==='know'){const t=st.targets[c];ids=[t,A.id===t?B.id:A.id]}else ids=[A.id,B.id];
+    const x=H.ans[ids[0]],y=H.ans[ids[1]],ok=!!(x&&y&&x.i===y.i);
+    const pts=!ok?0:st.t==='know'?Math.round(500+500*Math.max(0,1-y.ms/(T*1000))):1000;
+    H.scores[c]+=pts;H.results[c]={ok,pts,ids,ans:[x?x.i:-1,y?y.i:-1]};
+  });
+  H.phase='reveal';hSend();
+}
+function hChrono(){const d=(H.step&&H.step.q.s)||CHRONO;H.span=d;H.deadline=Date.now()+d*1000;hSend()}
+function hHeart(ok){if(ok)H.scores[H.step.c]+=500;hNext()}
+function hRemove(id){if(H.phase!=='lobby'||id===myId)return;const p=H.players.find(p=>p.id===id);if(p&&p.conn)try{p.conn.send({type:'err',msg:'L\'animateur vous a retiré de la partie. Vous pouvez la rejoindre à nouveau.'})}catch(e){}H.players=H.players.filter(p=>p.id!==id);hSend()}
+
+/* ---------- joueur ---------- */
+function join(code,name,couple){
+  isHost=false;leaving=false;joinArgs={code,name,couple};
+  if(peer)try{peer.destroy()}catch(e){}
+  let got=false;const to=setTimeout(()=>{if(!got)fail('Impossible de rejoindre la partie. Vérifiez le code et la connexion internet.')},15000);
+  peer=new Peer({debug:0});
+  peer.on('open',()=>{
+    conn=peer.connect(PREFIX+code,{reliable:true,serialization:'json'});
+    conn.on('open',()=>conn.send({type:'join',id:myId,name,couple}));
+    conn.on('data',d=>{if(!d)return;if(d.type==='state'){got=true;clearTimeout(to);recv(d.g)}else if(d.type==='err'){got=true;clearTimeout(to);leaving=true;fail(d.msg)}});
+    conn.on('close',()=>{if(!leaving)lost()});
+  });
+  peer.on('error',e=>{clearTimeout(to);got=true;if(e.type==='peer-unavailable')fail('Aucune partie ne correspond à ce code. Vérifiez les 4 chiffres auprès de l\'animateur.');else if(!G)fail('Problème de connexion. Réessayez dans un instant.')});
+  wait('Connexion à la partie '+esc(code)+'…');
+}
+function answer(i){if(isHost)hAnswer(myId,i);else if(conn&&conn.open)conn.send({type:'answer',i})}
+
+/* ---------- affichage ---------- */
+function paint(html,key){const k=key||'';app.innerHTML=html;if(k!==lastKey){app.firstElementChild&&app.firstElementChild.classList.add('enter');window.scrollTo(0,0)}lastKey=k}
+function wait(msg){paint(`<div class="center tc">${HERO}<p class="big" style="font-size:26px">${msg}</p></div>`,'wait')}
+function fail(msg){G=null;paint(`<div class="center tc">${HERO}<div class="err">${esc(msg)}</div><button class="btn" id="home">Retour à l'accueil</button></div>`,'fail');$('#home').onclick=()=>{leave();home()}}
+function lost(){paint(`<div class="center tc">${HERO}<p class="big" style="font-size:28px">Connexion perdue</p><p class="mute">L'animateur a peut-être fermé la page ou son téléphone s'est mis en veille.</p><button class="btn" id="re">Se reconnecter</button><button class="btn ghost" id="home">Accueil</button></div>`,'lost');$('#re').onclick=()=>join(joinArgs.code,joinArgs.name,joinArgs.couple);$('#home').onclick=()=>{leave();home()}}
+function leave(){leaving=true;try{peer&&peer.destroy()}catch(e){}peer=null;conn=null;H=null;G=null;isHost=false}
+
+function tipsPage(){
+  const groups=[['Pour tous les couples',TIPS.filter(x=>!x.th)],...TKEYS.map(k=>[THEMES[k].label,TIPS.filter(x=>x.th===k)]).filter(g=>g[1].length)];
+  paint(`<div><h1 style="font-size:34px;margin:8px 0 6px">Conseils de couple</h1><p class="mute small">Ils s'affichent aussi au fil de la partie, selon les thèmes choisis.</p>${groups.map(([l,a])=>`<p class="small mute" style="margin:18px 0 0">${l}</p>${a.map(x=>tipCard(x.t).replace('<b>Conseil de couple</b><br>','')).join('')}`).join('')}<button class="btn" id="back">Retour</button></div>`,'tips');
+  $('#back').onclick=home;
+}
+function home(){
+  const nm=esc(store.get('nd-name')||''),cp=+(store.get('nd-couple')||1),hc=(location.hash.match(/^#(\d{4})$/)||[])[1]||'';
+  const sel=`<select id="cp">${[1,2,3,4].map(n=>`<option value="${n}"${n===cp?' selected':''}>Couple ${n}</option>`).join('')}</select>`;
+  paint(`<div>${HERO}<h1 class="tc">Nous deux, le quiz</h1><p class="mute tc">Le jeu des couples : chacun répond sur son propre téléphone. De 1 à 4 couples, des parties de 15 à 40 minutes.</p>
+  <form id="f"><label for="nm">Votre prénom</label><input id="nm" maxlength="16" autocomplete="off" value="${nm}" required>
+  <label for="cp">Votre couple</label>${sel}<p class="small mute" style="margin:6px 0 0">Les deux membres d'un même couple choisissent le même numéro.</p>
+  <label for="code">Code de la partie (pour rejoindre)</label><input id="code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="4 chiffres" value="${hc}">
+  <button class="btn" type="submit" id="bj">Rejoindre la partie</button><button class="btn ghost" type="button" id="bc">Créer une nouvelle partie</button></form>
+  <button class="btn ghost" type="button" id="bt">Lire les conseils de couple</button>
+  <ul class="rules"><li>Une seule personne crée la partie : elle devient l'animateur et joue aussi.</li><li>Les autres ouvrent cette même page, tapent le code et rejoignent.</li><li>L'animateur choisit les thèmes : complicité, cuisine, coquin, fantasmes, jeux de rôle.</li><li>Les points vont au couple et s'additionnent partie après partie : idéal pour un week-end.</li></ul></div>`,'home');
+  const vals=()=>{const n=$('#nm').value.trim(),c=+$('#cp').value;if(!n){$('#nm').focus();return null}store.set('nd-name',n);store.set('nd-couple',c);return {n,c}};
+  $('#f').onsubmit=e=>{e.preventDefault();const v=vals();if(!v)return;const code=$('#code').value.trim();if(!/^\d{4}$/.test(code)){$('#code').focus();return}keepAwake();join(code,v.n,v.c)};
+  $('#bc').onclick=()=>{const v=vals();if(!v)return;keepAwake();hostCreate(v.n,v.c)};
+  $('#bt').onclick=tipsPage;
+}
+
+const nameOf=id=>{const p=G.players.find(p=>p.id===id);return p?p.name:'?'};
+const mates=c=>G.players.filter(p=>p.couple===c);
+const cname=c=>mates(c).map(p=>esc(p.name)).join(' & ')||('Couple '+c);
+const fill=(s,m)=>s.replace(/\{(\w)\}/g,(_,k)=>esc(m[k]??''));
+const opts=list=>'<div class="opts">'+list.map((o,i)=>`<button class="opt o${i}" data-i="${i}">${SH[i]}<span>${o}</span></button>`).join('')+'</div>';
+function board(){
+  const cs=Object.keys(G.scores).map(Number).sort((a,b)=>G.scores[b]-G.scores[a]),m=Math.max(1000,...cs.map(c=>G.scores[c])),me=myCouple();
+  return '<div class="panel">'+cs.map(c=>`<div class="row"><span>${cname(c)}${c===me?' <span class="small mute">(vous)</span>':''}</span><span class="pts">${G.scores[c]}</span><div class="bar"><i style="width:${G.scores[c]/m*100}%;background:${c===me?'var(--rose)':'var(--vio)'}"></i></div></div>`).join('')+'</div>';
+}
+const myCouple=()=>{const p=G.players.find(p=>p.id===myId);return p?p.couple:0};
+const top=()=>{const s=G.step;return `<div class="top"><span>Manche ${s.ri+1} · ${ROUNDS[s.r].n}</span><span>${G.num}/${G.total}</span></div>`};
+const fmt=x=>{const t=Math.ceil(x);return t>=60?Math.floor(t/60)+':'+String(t%60).padStart(2,'0'):String(t)};
+const tipCard=t=>t?`<div class="tip"><b>Conseil de couple</b><br>${esc(t)}</div>`:'';
+const thTag=q=>q&&q.th?`<span class="tag" style="margin-left:6px">${esc(q.th)}</span>`:'';
+function tourPanel(){const t=Object.values(G.tour||{}).sort((a,b)=>b.pts-a.pts);if(!t.length)return '';return `<p class="small mute" style="margin:18px 0 0">Classement du week-end (cumul des parties)</p><div class="panel" style="margin-top:6px">${t.map(x=>`<div class="row"><span>${esc(x.label)} <span class="small mute">· ${x.games} partie${x.games>1?'s':''}</span></span><span class="pts">${x.pts}</span></div>`).join('')}</div>`}
+const hostBtn=(label,id,cls)=>isHost?`<button class="btn ${cls||''}" id="${id}">${label}</button>`:'';
+const waitHost=msg=>isHost?'':`<p class="mute small tc" style="margin-top:16px">${msg||'L\'animateur passe à la suite.'}</p>`;
+
+function recv(g){G=g;G._at=Date.now();render()}
+function render(){
+  if(!G)return;const ph=G.phase,c=myCouple(),key=ph+G.num+(G.step?G.step.t:'');
+  if(ph==='lobby'){
+    const used=[1,2,3,4].filter(n=>mates(n).length);const ok=used.length>=1&&used.every(n=>mates(n).length===2);
+    const link=location.href.split('#')[0]+'#'+G.code;
+    paint(`<div class="center"><p class="tc mute" style="margin:0">Code de la partie</p><div class="code">${esc(G.code)}</div>
+    <p class="tc small mute">Les autres joueurs ouvrent cette page, choisissent leur couple et tapent ce code.</p>
+    ${isHost?`<button class="btn ghost" id="copy">Copier le lien d'invitation</button>`:''}
+    <div class="panel">${used.length?used.map(n=>`<div class="cpl"><b>Couple ${n}</b><span>${mates(n).map(p=>`<span class="chip ${p.online?'':'off'}">${esc(p.name)}${isHost&&p.id!==myId?`<button data-rm="${esc(p.id)}" aria-label="Retirer ${esc(p.name)}">×</button>`:'<span style="width:8px"></span>'}</span>`).join('')}${mates(n).length<2?'<span class="small mute"> en attente…</span>':''}</span></div>`).join(''):'<p class="mute">Personne pour l\'instant.</p>'}</div>
+    <p class="small mute" style="margin:18px 0 6px">Thèmes de cette partie${isHost?' (touchez pour choisir)':''}</p><div class="themes">${TKEYS.map(k=>{const on=(G.themes||[]).includes(k),t=THEMES[k];return isHost?`<button class="tg" data-th="${k}" aria-pressed="${on}">${t.label}${t.adulte?' <small>18+</small>':''}</button>`:(on?`<span class="tg" aria-pressed="true">${t.label}</span>`:'')}).join('')}</div>
+    ${(G.themes||[]).some(k=>THEMES[k].adulte)?'<p class="small mute">Thèmes coquins : à choisir seulement si les deux couples sont d\'accord. Chaque couple garde son joker.</p>':''}
+    ${isHost?`<label for="len">Durée</label><select id="len">${Object.entries(LENS).map(([k,v])=>`<option value="${k}"${G.len===k?' selected':''}>${v.l}</option>`).join('')}</select>`:''}
+    ${tourPanel()}${isHost&&Object.keys(G.tour||{}).length?'<button class="btn ghost" id="rst">Remettre le classement du week-end à zéro</button>':''}
+    ${isHost?`<button class="btn" id="go"${ok&&(G.themes||[]).length?'':' disabled'}>Lancer la partie</button><p class="small mute tc">${!ok?'Chaque couple doit compter exactement 2 joueurs.':(G.themes||[]).length?'Tout le monde est là ? C\'est parti !':'Choisissez au moins un thème.'}</p><p class="small mute tc">Gardez cette page ouverte et l'écran allumé : c'est votre téléphone qui fait tourner la partie.</p>`:waitHost('En attente du lancement par l\'animateur.')}</div>`,key);
+    if(isHost){$('#go').onclick=hStart;$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(link);$('#copy').textContent='Lien copié !'}catch(e){$('#copy').textContent=link}};app.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>hRemove(b.dataset.rm));app.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>hTheme(b.dataset.th,b.getAttribute('aria-pressed')!=='true'));$('#len').onchange=e=>hLen(e.target.value);if($('#rst'))$('#rst').onclick=()=>{if($('#rst').dataset.c){hResetTour()}else{$('#rst').dataset.c=1;$('#rst').textContent='Confirmer la remise à zéro'}}}
+    return;
+  }
+  if(ph==='intro'){
+    const r=ROUNDS[G.step.r];
+    paint(`<div class="center tc"><span class="tag">Manche ${G.step.ri+1} sur ${G.step.R}</span><h1 style="margin:14px 0">${r.n}</h1><p>${r.d}</p>${G.step.ri?board()+tipCard(G.step.tip):''}${hostBtn('C\'est parti','go')}${waitHost('L\'animateur va lancer la manche.')}</div>`,key);
+    if(isHost)$('#go').onclick=hNext;return;
+  }
+  if(ph==='ask'){
+    const s=G.step,ms=mates(c);let qt,o,tag;
+    if(s.t==='know'){const q=s.q,t=s.targets[c],m={n:nameOf(t)};o=q.o.map(x=>fill(x,m));
+      if(t===myId){qt=fill(q.me,m);tag='Réponds sur toi, en secret'}else{qt=fill(q.them,m);tag='Devine la réponse de '+esc(m.n)}}
+    else{const q=s.q,m={a:ms[0]?.name,b:ms[1]?.name};o=q.o.map(x=>fill(x,m));qt=fill(q.q,m);tag='Réponds en secret pour votre couple'}
+    const timer=`<div class="timer"><i id="bar"></i></div><div class="count" id="cnt">${Math.ceil(G.left)}</div>`;
+    if(G.answered.includes(myId)){
+      const rest=G.players.filter(p=>p.online&&!G.answered.includes(p.id)).map(p=>esc(p.name));
+      paint(`${top()}<div class="center tc"><p class="big" style="font-size:30px">Réponse envoyée</p><p class="mute">On attend : ${rest.join(', ')||'…'}</p>${timer}</div>`,key+'w');
+    }else{paint(`${top()}<div class="tc"><span class="tag">${tag}</span>${thTag(s.q)}</div><div class="q">${qt}</div>${timer}${opts(o)}`,key);app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.i))}
+    tickNow();return;
+  }
+  if(ph==='reveal'){
+    const s=G.step,res=G.results[c]||{ok:false,pts:0,ids:[],ans:[-1,-1]},ms=mates(c);let o,qt,v;
+    if(s.t==='know'){const q=s.q,m={n:nameOf(res.ids[0])};o=q.o.map(x=>fill(x,m));qt=fill(q.them,m);v=res.ok?'Bien vu !':'Raté !'}
+    else{const q=s.q,m={a:ms[0]?.name,b:ms[1]?.name};o=q.o.map(x=>fill(x,m));qt=fill(q.q,m);v=res.ok?'Même longueur d\'onde !':'Pas tout à fait…'}
+    const card=(k,lab)=>{const i=res.ans[k];return i<0?`<div class="opt on"><span><small>${lab}</small><br>Pas de réponse</span></div>`:`<div class="opt o${i}">${SH[i]}<span><small>${lab}</small><br>${o[i]}</span></div>`};
+    const l0=s.t==='know'?'Réponse de '+esc(nameOf(res.ids[0])):esc(nameOf(res.ids[0])),l1=s.t==='know'?'Pronostic de '+esc(nameOf(res.ids[1])):esc(nameOf(res.ids[1]));
+    paint(`${top()}<div class="center"><div class="verdict ${res.ok?'good':'bad'}">${v}</div><p class="pts tc">+${res.pts} points</p><div class="q" style="font-size:20px;margin-bottom:6px">${qt}</div><div class="two">${card(0,l0)}${card(1,l1)}</div>${res.ok?'':'<p class="mute small tc">Expliquez-vous chacun en une phrase.</p>'}${board()}${tipCard(s.tip)}${hostBtn('Question suivante','go')}${waitHost()}</div>`,key);
+    if(isHost)$('#go').onclick=hNext;return;
+  }
+  if(ph==='heart'){
+    const s=G.step,q=s.q,mine=s.c===c,running=G.left>0;
+    const info=q.prive?`<div class="panel tc" style="padding:12px"><b>Gage privé</b><br><span class="mute">À réaliser ${esc(q.prive)}, rien que vous deux.</span></div>`:'';
+    paint(`${top()}<div class="center tc"><span class="tag">${mine?'À vous deux !':'Au tour de '+cname(s.c)}</span>${thTag(q)}<div class="q" style="margin-top:18px">${q.q}</div>${info}
+    ${q.s?`<div class="timer"><i id="bar"></i></div><div class="count" id="cnt">${fmt(running?G.left:q.s)}</div>${running?'':hostBtn('Lancer le chrono ('+fmt(q.s)+')','chrono','ghost')}`:''}
+    <p class="mute small">${q.prive?(mine?'Acceptez le gage : les autres comptent sur votre honnêteté !':'Ce gage se fera en privé.'):(mine?'Les autres vous regardent, sans juger.':'Regardez et écoutez sans juger.')}</p>
+    ${tipCard(s.tip)}${hostBtn(q.prive?'Gage accepté · +500':'Défi relevé · +500','ok')}${hostBtn('Joker : on passe','skip','ghost')}${waitHost(mine?'Vous pouvez dire « joker » à l\'animateur pour passer, sans pénalité.':'L\'animateur valide le défi.')}</div>`,key+(running?'r':''));
+    if(isHost){$('#ok').onclick=()=>hHeart(true);$('#skip').onclick=()=>hHeart(false);if($('#chrono'))$('#chrono').onclick=hChrono}
+    tickNow();return;
+  }
+  if(ph==='end'){
+    const cs=Object.keys(G.scores).map(Number),best=Math.max(...cs.map(x=>G.scores[x])),w=cs.filter(x=>G.scores[x]===best);
+    paint(`<div class="center tc">${HERO}<span class="tag">Fin de la partie</span><h1 style="margin:12px 0">${w.length>1?'Égalité au sommet !':'Bravo '+cname(w[0])+' !'}</h1>${board()}${tourPanel()}${tipCard(G.endTip)}<p style="margin-top:18px">Le vrai score, c'est tout ce que vous venez de vous dire. Ce soir, répétez-vous chacun la phrase qui vous a le plus touché.</p>${hostBtn('Nouvelle partie (changer les thèmes)','again')}${waitHost('L\'animateur peut relancer une partie.')}<button class="btn ghost" id="home">Quitter</button></div>`,key);
+    if(isHost)$('#again').onclick=hLobby;$('#home').onclick=()=>{leave();home()};
+  }
+}
+function tickNow(){
+  if(!G)return;const rem=Math.max(0,G.left-(Date.now()-G._at)/1000),span=G.span||T;
+  const c=$('#cnt'),b=$('#bar');if(c&&(G.phase==='ask'||G.left))c.textContent=fmt(rem);if(b)b.style.width=(G.phase==='ask'||G.left?rem/span*100:100)+'%';
+}
+setInterval(tickNow,200);
+if(typeof Peer==='undefined')paint(`<div class="center tc">${HERO}<div class="err">Le module de connexion n'a pas pu se charger. Vérifiez la connexion internet puis rechargez la page.</div></div>`,'nopeer');
+else home();
+}
+</script>
+</body>
+</html>
